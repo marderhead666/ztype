@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -43,7 +42,7 @@
 
         #bottom-line {
             position: absolute;
-            bottom: 50px; /* Etwas höher als der untere Rand */
+            bottom: 50px;
             left: 0;
             width: 100%;
             height: 5px;
@@ -76,7 +75,7 @@
         #game-over {
             display: none;
             font-size: 3em;
-            color: black; /* Schwarz für den Game Over Text */
+            color: black;
             position: absolute;
             top: 50%;
             left: 50%;
@@ -105,17 +104,19 @@
         }
 
         #start-menu button,
-        #time-selection button {
+        #time-selection button,
+        #speed-selection button {
             padding: 10px 20px;
             margin: 10px;
             font-size: 1.2em;
             cursor: pointer;
-            width: 200px; /* Setze eine feste Breite für alle Buttons */
-            height: 50px; /* Setze eine feste Höhe für alle Buttons */
+            width: 200px;
+            height: 50px;
         }
 
-        #time-selection {
-            display: none; /* Standardmäßig versteckt */
+        #time-selection,
+        #speed-selection {
+            display: none;
             flex-direction: column;
             justify-content: center;
             align-items: center;
@@ -125,7 +126,8 @@
             width: 100%;
         }
 
-        #time-selection h2 {
+        #time-selection h2,
+        #speed-selection h2 {
             margin-bottom: 20px;
         }
     </style>
@@ -142,6 +144,13 @@
         <button id="time-1">1 Minute</button>
         <button id="time-2">2 Minuten</button>
         <button id="time-5">5 Minuten</button>
+    </div>
+
+    <div id="speed-selection">
+        <h2>Wählen Sie die Geschwindigkeit</h2>
+        <button id="slow-speed">Langsam</button>
+        <button id="medium-speed">Mittel</button>
+        <button id="fast-speed">Schnell</button>
     </div>
 
     <div id="game-container" style="display: none;">
@@ -161,21 +170,18 @@
     <script>
         let words = [];
         let gameTime = 60;
+        let fallSpeed = 1.5; // Standardfallgeschwindigkeit
 
-        // Starte das Spiel mit den ausgewählten Einstellungen
         function startGame() {
             const gameContainer = document.getElementById('game-container');
-            const timeSelection = document.getElementById('time-selection');
+            const speedSelection = document.getElementById('speed-selection');
 
-            // Zeige das Spielcontainer und verstecke das Menü
             gameContainer.style.display = 'block';
-            timeSelection.style.display = 'none';
+            speedSelection.style.display = 'none';
 
-            // Initialisiere das Spiel
             initializeGame();
         }
 
-        // Zeige die Zeit-Auswahl an
         function showTimeSelection() {
             const startMenu = document.getElementById('start-menu');
             const timeSelection = document.getElementById('time-selection');
@@ -183,7 +189,13 @@
             timeSelection.style.display = 'flex';
         }
 
-        // Funktion zur Initialisierung des Spiels
+        function showSpeedSelection() {
+            const timeSelection = document.getElementById('time-selection');
+            const speedSelection = document.getElementById('speed-selection');
+            timeSelection.style.display = 'none';
+            speedSelection.style.display = 'flex';
+        }
+
         function initializeGame() {
             const wordInput = document.getElementById('word-input');
             const wordDisplay = document.getElementById('word-display');
@@ -202,9 +214,8 @@
             let activeWords = [];
             let gameOver = false;
 
-            // Wörter erstellen und zufällig platzieren
             function createWord() {
-                if (activeWords.length >= 15) return; // Maximal 15 Wörter auf dem Bildschirm
+                if (activeWords.length >= 15) return;
 
                 let availableWords = words.filter(word => !activeWords.some(activeWord => activeWord.textContent === word));
                 if (availableWords.length === 0) return;
@@ -213,26 +224,22 @@
                 wordElement.classList.add('word');
                 wordElement.textContent = availableWords[Math.floor(Math.random() * availableWords.length)];
 
-                // Wort positionieren
                 positionWord(wordElement);
                 wordDisplay.appendChild(wordElement);
                 activeWords.push(wordElement);
 
-                // Wort fallen lassen
                 fallWord(wordElement);
             }
 
-            // Positioniere das Wort an einer zufälligen Stelle ohne Überlappung
             function positionWord(wordElement) {
                 let position;
                 let overlap;
                 do {
                     overlap = false;
-                    position = Math.random() * (wordDisplay.offsetWidth - 100); // Maximal 100 Pixel Breite für Wörter
+                    position = Math.random() * (wordDisplay.offsetWidth - 100);
                     wordElement.style.left = position + 'px';
                     wordElement.style.top = '0px';
 
-                    // Überprüfen, ob das Wort überlappt
                     activeWords.forEach(existingWord => {
                         if (existingWord !== wordElement) {
                             const existingRect = existingWord.getBoundingClientRect();
@@ -244,16 +251,14 @@
                                 newRect.top < existingRect.bottom &&
                                 newRect.bottom > existingRect.top
                             ) {
-                                overlap = true; // Es gibt eine Überlappung
+                                overlap = true;
                             }
                         }
                     });
-                } while (overlap); // Solange überlappen, wiederhole
+                } while (overlap);
             }
 
-            // Fallende Bewegung
             function fallWord(wordElement) {
-                const fallSpeed = 1.5;  // Geschwindigkeit der fallenden Wörter
                 const fallInterval = setInterval(() => {
                     if (gameOver) {
                         clearInterval(fallInterval);
@@ -262,27 +267,24 @@
                     let currentTop = parseFloat(wordElement.style.top);
                     wordElement.style.top = (currentTop + fallSpeed) + 'px';
 
-                    // Wenn das Wort den Strich berührt, Spiel beenden
                     const wordBottom = wordElement.getBoundingClientRect().bottom;
                     const lineTop = bottomLine.getBoundingClientRect().top;
                     if (wordBottom >= lineTop) {
                         endGame();
                         clearInterval(fallInterval);
                     }
-                }, 20); // Geschwindigkeit der Bewegung
+                }, 20);
             }
 
-            // Event-Listener für Eingabe
             wordInput.addEventListener('keydown', function (event) {
                 if (event.key === 'Enter') {
                     validateWord();
-                    wordInput.value = ''; // Leert das Eingabefeld nach der Eingabe
+                    wordInput.value = '';
                 } else {
                     highlightMatchingWord(wordInput.value);
                 }
             });
 
-            // Überprüfen, ob das eingegebene Wort korrekt ist
             function validateWord() {
                 const inputValue = wordInput.value.trim();
                 let correctWord = false;
@@ -290,24 +292,22 @@
                 activeWords.forEach((wordElement, index) => {
                     if (wordElement.textContent === inputValue) {
                         correctWord = true;
-                        wordDisplay.removeChild(wordElement); // Entferne das Wort, wenn es korrekt eingegeben wurde
-                        activeWords.splice(index, 1); // Entferne das Wort aus aktiven Wörtern
-                        updateScore(); // Punkte erhöhen
-                        correctWords++; // Zähle richtiges Wort
+                        wordDisplay.removeChild(wordElement);
+                        activeWords.splice(index, 1);
+                        updateScore();
+                        correctWords++;
                     }
                 });
 
-                // Wenn das eingegebene Wort falsch ist, Hintergrund rot blitzen
                 if (!correctWord && inputValue) {
                     incorrectWords++;
                     body.style.backgroundColor = 'red';
                     setTimeout(() => {
-                        body.style.backgroundColor = '#D3EE98'; // Zurück zur ursprünglichen Farbe
+                        body.style.backgroundColor = '#D3EE98';
                     }, 1000);
                 }
             }
 
-            // Highlighting des aktuellen Wortes
             function highlightMatchingWord(currentInput) {
                 const wordsElements = document.querySelectorAll('.word');
                 wordsElements.forEach(wordElement => {
@@ -319,13 +319,11 @@
                 });
             }
 
-            // Punkte erhöhen
             function updateScore() {
                 score++;
                 scoreDisplay.textContent = score;
             }
 
-            // Timer starten
             function startTimer() {
                 const timerInterval = setInterval(() => {
                     if (timeLeft > 0 && !gameOver) {
@@ -338,22 +336,18 @@
                 }, 1000);
             }
 
-            // Spiel beenden
             function endGame() {
                 gameOver = true;
                 clearInterval(wordInterval);
 
-                // Alle aktiven Wörter entfernen und Eingabefeld ausblenden
                 activeWords.forEach(wordElement => wordDisplay.removeChild(wordElement));
                 activeWords = [];
-                wordInput.style.display = 'none'; // Verstecke das Eingabefeld
-                document.getElementById('header').style.display = 'none'; // Verstecke die Punkteanzeige
+                wordInput.style.display = 'none';
+                document.getElementById('header').style.display = 'none';
 
-                // Game Over-Bildschirm anzeigen
                 gameOverDisplay.style.display = 'block';
                 gameOverDisplay.innerHTML = '';
 
-                // Hintergrundfarbe auf grün setzen
                 body.style.backgroundColor = '#D3EE98';
 
                 const averageWordsPerMinute = (correctWords / gameTime) * 60;
@@ -363,22 +357,19 @@
                     <p>Falsche Wörter: ${incorrectWords}</p>
                     <p>WPM: ${averageWordsPerMinute.toFixed(2)}</p>
                 `;
-                scoreSummary.style.display = 'block'; // Zeige die Zusammenfassung an
+                scoreSummary.style.display = 'block';
             }
 
-            // Spiel starten
             wordInterval = setInterval(() => {
                 if (!gameOver) {
                     createWord();
                 }
-            }, 1000); // Intervall für Wortgenerierung
+            }, 1000);
 
-            // Timer starten
             startTimer();
-            wordInput.focus(); // Fokussiere das Eingabefeld sofort
+            wordInput.focus();
         }
 
-        // Sprach- und Zeitoptionen auswählen
         document.getElementById('german-button').addEventListener('click', function () {
             words = ["Yasmin", "Konversation", "Salat", "Auto", "Mercedes", "Fluss", "Mero", "Affe", "Blume", "Engel", "Boden", "Sonne", "Apfel"];
             showTimeSelection();
@@ -389,19 +380,33 @@
             showTimeSelection();
         });
 
-        // Zeitoptionen
         document.getElementById('time-1').addEventListener('click', function () {
             gameTime = 60;
-            startGame();
+            showSpeedSelection();
         });
 
         document.getElementById('time-2').addEventListener('click', function () {
             gameTime = 120;
-            startGame();
+            showSpeedSelection();
         });
 
         document.getElementById('time-5').addEventListener('click', function () {
             gameTime = 300;
+            showSpeedSelection();
+        });
+
+        document.getElementById('slow-speed').addEventListener('click', function () {
+            fallSpeed = 1;
+            startGame();
+        });
+
+        document.getElementById('medium-speed').addEventListener('click', function () {
+            fallSpeed = 1.5;
+            startGame();
+        });
+
+        document.getElementById('fast-speed').addEventListener('click', function () {
+            fallSpeed = 2.5;
             startGame();
         });
     </script>
